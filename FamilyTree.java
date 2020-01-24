@@ -1,3 +1,7 @@
+// import org.json.simple.JSONArray;
+// import org.json.simple.JSONObject;
+
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
@@ -44,6 +48,79 @@ public class FamilyTree {
     }
   }
 
+    // private static void writeJSONOne() throws IOException {
+    //     BufferedWriter buffWriter = new BufferedWriter(new FileWriter("treeData.json"));
+    //     JSONArray people = new JSONArray();
+    //     for (Entry<String, Person> pair : tree.getPeople().entrySet()) {
+    //         ArrayList<String> added = new ArrayList<>();
+    //         JSONObject person = new JSONObject();
+    //         Person currentPerson =  pair.getValue();
+    //         person.put("name", currentPerson.getName());
+    //         JSONArray connections = new JSONArray();
+    //         for (Integer id : currentPerson.getFamilyIDs()) {
+    //             if (tree.getFamilies().get(id).getParents().contains(currentPerson)) {
+    //                 for (Person child : tree.getFamilies().get(id).getChildren()) {
+    //                     if (!added.contains(child.getName())) {
+    //                         added.add(child.getName());
+    //                         JSONObject jsonChild = new JSONObject();
+    //                         jsonChild.put("name", child.getName());
+    //                         jsonChild.put("relationship", "child");
+    //                         connections.add(jsonChild);
+    //                     }
+    //                 }
+    //                 if (tree.getFamilies().get(id).getParents().size() > 1) {
+    //                     for (Person parent : tree.getFamilies().get(id).getParents()) {
+    //                         if (!parent.equals(currentPerson)) {
+    //                             if (!added.contains(parent.getName())){
+    //                                 added.add(parent.getName());
+    //                                 if (tree.getFamilies().get(id).hasMarriage()) {
+    //                                     JSONObject jsonSpouse = new JSONObject();
+    //                                     jsonSpouse.put("name", parent.getName());
+    //                                     jsonSpouse.put("relationship", "spouse");
+    //                                     connections.add(jsonSpouse);
+    //                                 } else {
+    //                                     JSONObject jsonCoparent = new JSONObject();
+    //                                     jsonCoparent.put("name", parent.getName());
+    //                                     jsonCoparent.put("relationship", "coparent");
+    //                                     connections.add(jsonCoparent);
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             } else {
+    //                 for (Person child : tree.getFamilies().get(id).getChildren()) {
+    //                     if (!child.equals(currentPerson)) {
+    //                         if (!added.contains(child.getName())){
+    //                             added.add(child.getName());
+    //                             JSONObject jsonSibling = new JSONObject();
+    //                             jsonSibling.put("name", child.getName());
+    //                             jsonSibling.put("relationship", "sibling");
+    //                             connections.add(jsonSibling);
+    //                         }
+    //                     }
+    //                 }
+    //                 for (Person parent : tree.getFamilies().get(id).getParents()) {
+    //                     if (!parent.equals(currentPerson)) {
+    //                         if (!added.contains(parent.getName())) {
+    //                             added.add(parent.getName());
+    //                             JSONObject jsonParent = new JSONObject();
+    //                             jsonParent.put("name", parent.getName());
+    //                             jsonParent.put("relationship", "parent");
+    //                             connections.add(jsonParent);
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         added.clear();
+    //         person.put("connections", connections);
+    //         people.add(person);
+    //     }
+    //     buffWriter.write(people.toJSONString());
+    //     buffWriter.close();
+    // }
+
   /**
    * Gets the details of the family from the user and passes it to the tree.
    * @param scanner the System.in scanner.
@@ -75,9 +152,11 @@ public class FamilyTree {
   private static void findShortestPath(String nameOne, String nameTwo) {
     try {
       HashMap<String, Person> people = tree.getPeople();
+      nameOne = nameOne.toLowerCase();
+      nameTwo = nameTwo.toLowerCase();
       if (people.containsKey(nameOne) && people.containsKey(nameTwo)) {
           getPath(people.get(nameOne), people.get(nameTwo));
-          System.out.println("\n" + nameOne + " --> " + nameTwo);
+          System.out.println("\n" + people.get(nameOne).getName() + " --> " + people.get(nameTwo).getName());
           System.out.println("Distance: " + people.get(nameTwo).getDistance() + "\n");
           if (people.get(nameTwo).getDistance() > 0) {
               for (int i = 0; i < people.get(nameTwo).getDistance() + 1; i++) {
@@ -122,7 +201,7 @@ public class FamilyTree {
   private static void getPath(Person sourcePerson, Person searchPerson) throws InterruptedException {
     ArrayList<Person> visited = new ArrayList<>();
     HashMap<Person, Person> predecessorMap = new HashMap<>();
-    ArrayBlockingQueue<Person> queue = new ArrayBlockingQueue<>(tree.getPeople().size() * 500);
+    ArrayBlockingQueue<Person> queue = new ArrayBlockingQueue<>(tree.getPeople().size() * 50);
     ArrayList<Integer> famIDs;
     boolean found = false;
 
@@ -228,18 +307,19 @@ public class FamilyTree {
    * @param parentName The name of the parent.
    */
   private static void listChildren(String parentName) {
+    parentName = parentName.toLowerCase();
     for(Integer id: tree.getPeople().get(parentName).getFamilyIDs()) {
       Family family = tree.getFamilies().get(id);
       if (family.getParents().contains(tree.getPeople().get(parentName)) && family.getChildren().size() > 0) {
         if (family.getParents().size() > 1) {
         System.out.print("\nChildren:\nwith ");
           for (Person parent: family.getParents()) {
-            if (!parent.getName().equals(parentName)) {
+            if (!parent.getName().toLowerCase().equals(parentName)) {
               System.out.print(parent.getName() + " ");
             }
           }
         } else {
-          System.out.print("\nAs a single parent");
+          System.out.print("\nChildren:\nAs a single parent");
         }
         System.out.println(":");
         for (Person child: family.getChildren()) {
@@ -254,6 +334,7 @@ public class FamilyTree {
    * Finds the number of descendants of a given person
    * @param families the list of families that person is a parent in.
    * @param generation how many generations deep the recursion has run.
+   * @param print whether the generation details of this method are to be printed or not.
    */
   private static void getGenerations(Person person, ArrayList<Family> families, int generation, boolean print) {
     int children = 0;
@@ -373,18 +454,24 @@ public class FamilyTree {
       parents.clear();
   }
 
+  /**
+   * Calculate how many children each person has.
+   * @return kidNums - list of children counts for every person in tree with children.
+   */
   private static ArrayList<Integer> getMostKids() {
       int kidCount = 0;
       ArrayList<Integer> kidNums = new ArrayList<>();
       for (Entry<String, Person> pair : tree.getPeople().entrySet()) {
           Person person = pair.getValue();
           for (Integer id : person.getFamilyIDs()) {
-              if (tree.getFamilies().get(id).getParents().contains(person)) {
+              if ((tree.getFamilies().get(id).getParents().contains(person)) && (tree.getFamilies().get(id).getChildren().size() > 0)) {
                   kidCount += tree.getFamilies().get(id).getChildren().size();
               }
           }
           pair.getValue().setNumberOfChildren(kidCount);
-          kidNums.add(kidCount);
+          if (pair.getValue().getNumberOfChildren() > 0) {
+              kidNums.add(kidCount);
+          }
           kidCount = 0;
       }
       return kidNums;
@@ -411,10 +498,20 @@ public class FamilyTree {
       }
   }
 
+  /**
+   * Printing method for rankings.
+   * @param rankData The data from the ranking calculations.
+   * @param length how long the ranking list should be, user defined or whole tree.
+   * @param descendants if this is for the descendants ranking or the kids ranking.
+   * @param name name of the person who's positions are being retrieved, null if general ranking.
+   */
   private static void printRankings(ArrayList<Integer> rankData, int length, boolean descendants, String name) {
       ArrayList<Person> topPeople = new ArrayList<>();
       Collections.sort(rankData);
       Collections.reverse(rankData);
+      if (name != null) {
+          name = name.toLowerCase();
+      }
       for (int i = 0; i < length; i++) {
           int currentNumber = rankData.get(i);
           for (Entry<String, Person> pair : tree.getPeople().entrySet()) {
@@ -422,36 +519,52 @@ public class FamilyTree {
               String printString = descendants ? " descendants" : " kids";
               if (comparator == currentNumber && (!topPeople.contains(pair.getValue()))) {
                   topPeople.add(pair.getValue());
-                  if (name == null || pair.getValue().getName().equals(name)) {
+                  if (name == null || pair.getKey().equals(name)) {
                       System.out.println(i+1 + ". " + pair.getValue().getName() + "  " + rankData.get(i) + printString);
                       if (name != null) {
                           System.out.println();
                         return;
                       }
                   }
-                  System.out.println();
                   break;
               }
           }
       }
   }
 
+  /**
+   * Check if the user input is valid.
+   * @param inputArray the user input.
+   * @param parameters the number of parameters this action should take.
+   * @param numeric whether the input should be numeric or not.
+   * @return if the input is valid or not.
+   */
   private static boolean isValid(String[] inputArray, int parameters, boolean numeric) {
       return inputArray.length == parameters && (!numeric || tree.isNumeric(inputArray[1]));
   }
 
+  /**
+   * Retrieve and print the positions in each ranking set for the given name.
+   * @param name the name for the ranking positions to be retrieved.
+   */
   private static void getRankings(String name) {
-      if (tree.getPeople().containsKey(name)) {
+      if (tree.getPeople().containsKey(name.toLowerCase())) {
+          System.out.println("\nmost kids:");
           printRankings(getMostKids(), tree.getPeople().size(), false, name);
+          System.out.println("most descendants:");
           printRankings(getDescendants(), tree.getPeople().size(), true, name);
       } else {
           System.out.println("invalid name");
       }
   }
 
+  /**
+   * For the given person, print their parents, siblings and children. Immediate family.
+   * @param name the name of the person.
+   */
   private static void getDetails(String name) {
-      if (tree.getPeople().containsKey(name)) {
-          Person person = tree.getPeople().get(name);
+      if (tree.getPeople().containsKey(name.toLowerCase())) {
+          Person person = tree.getPeople().get(name.toLowerCase());
           System.out.println(person.getName());
           printParents(person);
           printSiblings(person);
@@ -470,6 +583,7 @@ public class FamilyTree {
       ArrayList<Integer> descNums = new ArrayList<>();
       for(Entry<String, Person> pair : tree.getPeople().entrySet()) {
           int kidCount = 0;
+          pair.getValue().resetNumberOfDescendants();
           for(Integer id: pair.getValue().getFamilyIDs()) {
               if (tree.getFamilies().get(id).getParents().contains(pair.getValue())) {
                   kidCount += tree.getFamilies().get(id).getChildren().size();
@@ -490,10 +604,12 @@ public class FamilyTree {
   }
 
   /**
-   *
+   * Given a person, count how many children they have.
+   * @param name the name of the person.
    */
   private static void countChildren(String name) {
       int kidCount = 0;
+      name = name.toLowerCase();
       ArrayList<Family> parentalFamilies = new ArrayList<>();
       if (tree.getPeople().containsKey(name)) {
           for(Integer id: tree.getPeople().get(name).getFamilyIDs()) {
@@ -526,7 +642,7 @@ public class FamilyTree {
             String input = scanner.nextLine();
             String[] inputArray = input.split(", ");
             switch (inputArray[0]) {
-                case "quit":
+                case "back":
                     System.out.println("Usage: <command>, <parameter>, <parameter>\ntype 'help' for a list of commands");
                     back = true;
                     break;
@@ -540,6 +656,7 @@ public class FamilyTree {
                 case "mostDescendants":
                     if (isValid(inputArray, 2, true)) {
                         printRankings(getDescendants(), Integer.parseInt(inputArray[1]), true, null);
+
                     } else {
                         System.out.println("usage: mostDescendants, <number");
                     }
@@ -552,7 +669,7 @@ public class FamilyTree {
                     }
                     break;
                 case "help":
-                    System.out.println("options:\n mostKids, <number>\n mostDescendants, <number>\n ranking, <name>");
+                    System.out.println("options:\n mostKids, <number>\n mostDescendants, <number>\n ranking, <name>\n type 'back'to return to the main menu");
                     break;
             }
         }
@@ -568,6 +685,11 @@ public class FamilyTree {
         System.out.println("Usage: <command>, <parameter>, <parameter>\ntype 'help' for a list of commands");
         String filePath = "./RawData.csv";
         tree = new Tree(filePath);
+        // try {
+        //     writeJSONOne();
+        // } catch(IOException ioe) {
+        //     ioe.printStackTrace();
+        // }
         while (!exitProgram) {
             System.out.print(":");
             String input = scanner.nextLine();
@@ -589,7 +711,7 @@ public class FamilyTree {
                     break;
                 case "isMember":
                     if (isValid(inputArray, 2, false)) {
-                        if (tree.getPeople().containsKey(inputArray[1])) {
+                        if (tree.getPeople().containsKey(inputArray[1].toLowerCase())) {
                             System.out.println("Yes.");
                         } else {
                             System.out.println("No.");
@@ -599,7 +721,7 @@ public class FamilyTree {
                     }
                     break;
                 case "help":
-                    System.out.println("Commands:\n path, <person1>, <person2> - displays connection between two people\n addFamily - add a new family instance\n isMember, <person1> - check if a person is in the tree\n listChildren, <person1> - list all the children of this person if any.\n getDetails, <person> - list this persons immediate family\n rankings - go to rankings menu\n stats - get current tree stats\n quit - exit program");
+                    System.out.println("Commands:\n path, <person1>, <person2> - displays connection between two people\n addFamily - add a new family instance\n isMember, <person1> - check if a person is in the tree\n listChildren, <person1> - list all the children of this person if any.\n details, <person> - list this persons immediate family\n rankings - go to rankings menu\n stats - get current tree stats\n quit - exit program");
                     break;
                 case "listChildren":
                     if (isValid(inputArray, 2, false)) {
@@ -612,18 +734,18 @@ public class FamilyTree {
                   System.out.println("People: " + tree.getPeople().size());
                   System.out.println("Families: " + tree.getFamilies().size());
                   break;
-                case "getDetails":
+                case "details":
                     if (isValid(inputArray, 2, false)) {
                         getDetails(inputArray[1]);
                     }else {
-                        System.out.println("usage: getDetails, <name>");
+                        System.out.println("usage: details, <name>");
                     }
                     break;
                 case "rankings":
                     rankingsMenu(scanner);
                     break;
                 default:
-                    System.out.println("incorrect command: type 'help' for a list of commands");
+                    System.out.println("incorrect command: type 'help' for a list of commands, remember the commas!");
                     break;
             }
         }
